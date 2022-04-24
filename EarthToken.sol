@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Unlicensed
 
+// pragma solidity ^0.7.4;
 pragma solidity ^0.8.4;
 
 library SafeMathInt {
@@ -559,7 +560,7 @@ contract EarthToken is ERC20Detailed, Ownable {
     uint8 public constant RATE_DECIMALS = 7;
 
     uint256 private constant INITIAL_FRAGMENTS_SUPPLY =
-        325 * 10**3 * 10**DECIMALS;
+        250 * 10**3 * 10**DECIMALS;
 
     uint256 public constant liquidityFee = 20;
     uint256 public constant treasuryFee = 30;
