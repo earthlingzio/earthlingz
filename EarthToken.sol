@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Unlicensed
 
-// pragma solidity ^0.7.4;
-pragma solidity ^0.8.4;
+pragma solidity ^0.7.4;
 
 library SafeMathInt {
     int256 private constant MIN_INT256 = int256(1) << 255;
