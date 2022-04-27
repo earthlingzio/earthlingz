@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Unlicensed
 
-pragma solidity ^0.7.4;
+pragma solidity ^0.8.4;
 
 library SafeMathInt {
     int256 private constant MIN_INT256 = int256(1) << 255;
@@ -563,14 +563,19 @@ contract EarthToken is ERC20Detailed, Ownable {
 
     uint256 public constant liquidityFee = 20;
     uint256 public constant treasuryFee = 30;
-    uint256 public constant earthSaviorFundFee = 40;
+    uint256 public constant earthSaviorFundFee = 30;
+    uint256 public constant earthAutoSaviorFundFee = 20;
     uint256 public constant volcanoFee = 20;
-    uint256 public constant nftRewardPoolFee = 20;
+    uint256 public constant nftRewardPoolFee = 10;
     uint256 public constant nftBUSDRewardFee = 20;
     uint256 public totalFee =
-        liquidityFee.add(treasuryFee).add(earthSaviorFundFee).add(
-            volcanoFee.add(nftRewardPoolFee).add(nftBUSDRewardFee)
-        );
+        liquidityFee
+            .add(treasuryFee)
+            .add(earthSaviorFundFee)
+            .add(earthAutoSaviorFundFee)
+            .add(volcanoFee)
+            .add(nftRewardPoolFee)
+            .add(nftBUSDRewardFee);
     uint256 public constant feeDenominator = 1000;
 
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
@@ -581,6 +586,7 @@ contract EarthToken is ERC20Detailed, Ownable {
     address public autoLiquidityReceiver;
     address public treasuryReceiver;
     address public earthSaviorFundReceiver;
+    address public earthAutoSaviorFundReceiver;
     address public nftRewardPoolReceiver;
     address public nftBUSDRewardReceiver;
     address public pairAddress;
@@ -624,6 +630,7 @@ contract EarthToken is ERC20Detailed, Ownable {
         autoLiquidityReceiver = 0x0000000000000000000000000000000000000000;
         treasuryReceiver = 0x0000000000000000000000000000000000000000;
         earthSaviorFundReceiver = 0x0000000000000000000000000000000000000000;
+        earthAutoSaviorFundReceiver = 0x0000000000000000000000000000000000000000;
         nftRewardPoolReceiver = 0x0000000000000000000000000000000000000000;
         nftBUSDRewardReceiver = 0x0000000000000000000000000000000000000000;
 
@@ -760,12 +767,13 @@ contract EarthToken is ERC20Detailed, Ownable {
         uint256 _liquidityFee = liquidityFee;
         uint256 _treasuryFee = treasuryFee;
         uint256 _earthSaviorFundFee = earthSaviorFundFee;
+        uint256 _earthAutoSaviorFundFee = earthAutoSaviorFundFee;
 
         if (recipient == pair) {
             _totalFee = 180;
             _liquidityFee = 30;
             _treasuryFee = 40;
-            _earthSaviorFundFee = 50;
+            _earthSaviorFundFee = 40;
         }
 
         uint256 feeAmount = gonAmount.mul(_totalFee).div(feeDenominator);
@@ -777,7 +785,10 @@ contract EarthToken is ERC20Detailed, Ownable {
         _gonBalances[address(this)] = _gonBalances[address(this)].add(
             gonAmount
                 .mul(
-                    _treasuryFee.add(_earthSaviorFundFee).add(nftBUSDRewardFee)
+                    _treasuryFee
+                        .add(_earthSaviorFundFee)
+                        .add(_earthAutoSaviorFundFee)
+                        .add(nftBUSDRewardFee)
                 )
                 .div(feeDenominator)
         );
@@ -865,11 +876,30 @@ contract EarthToken is ERC20Detailed, Ownable {
 
         uint256 amountToTreasury = amountETHToTreasuryESFAndNFTBUSD
             .mul(treasuryFee)
-            .div(treasuryFee.add(earthSaviorFundFee).add(nftBUSDRewardFee));
+            .div(
+                treasuryFee
+                    .add(earthSaviorFundFee)
+                    .add(earthAutoSaviorFundFee)
+                    .add(nftBUSDRewardFee)
+            );
 
         uint256 amountToESF = amountETHToTreasuryESFAndNFTBUSD
             .mul(earthSaviorFundFee)
-            .div(treasuryFee.add(earthSaviorFundFee).add(nftBUSDRewardFee));
+            .div(
+                treasuryFee
+                    .add(earthSaviorFundFee)
+                    .add(earthAutoSaviorFundFee)
+                    .add(nftBUSDRewardFee)
+            );
+
+        uint256 amountToAutoESF = amountETHToTreasuryESFAndNFTBUSD
+            .mul(earthAutoSaviorFundFee)
+            .div(
+                treasuryFee
+                    .add(earthSaviorFundFee)
+                    .add(earthAutoSaviorFundFee)
+                    .add(nftBUSDRewardFee)
+            );
 
         uint256 amountToNFTBUSD = amountETHToTreasuryESFAndNFTBUSD
             .sub(amountToTreasury)
@@ -882,6 +912,11 @@ contract EarthToken is ERC20Detailed, Ownable {
 
         (success, ) = payable(earthSaviorFundReceiver).call{
             value: amountToESF,
+            gas: 30000
+        }("");
+
+        (success, ) = payable(earthAutoSaviorFundReceiver).call{
+            value: amountToAutoESF,
             gas: 30000
         }("");
 
@@ -1049,12 +1084,14 @@ contract EarthToken is ERC20Detailed, Ownable {
         address _autoLiquidityReceiver,
         address _treasuryReceiver,
         address _earthSaviorFundReceiver,
+        address _earthAutoSaviorFundReceiver,
         address _nftRewardPoolReceiver,
         address _nftBUSDRewardReceiver
     ) external onlyOwner {
         autoLiquidityReceiver = _autoLiquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
         earthSaviorFundReceiver = _earthSaviorFundReceiver;
+        earthAutoSaviorFundReceiver = _earthAutoSaviorFundReceiver;
         nftRewardPoolReceiver = _nftRewardPoolReceiver;
         nftBUSDRewardReceiver = _nftBUSDRewardReceiver;
     }
